@@ -387,8 +387,8 @@ function extractBenchmarkDotnetResult(output) {
 function extractCustomBenchmarkResult(output) {
     try {
         const json = JSON.parse(output);
-        return json.map(({ name, value, unit, range, extra }) => {
-            return { name, value, unit, range, extra };
+        return json.map(({ name, value, unit, range, extra, group }) => {
+            return { name, value, unit, range, extra, group };
         });
     }
     catch (err) {
