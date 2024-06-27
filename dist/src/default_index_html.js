@@ -178,6 +178,10 @@ exports.DEFAULT_INDEX_HTML = String.raw`<!DOCTYPE html>
         customSmallerIsBetter: '#ff3838',
         _: '#333333'
       };
+      const predefinedPlotColors = [
+        '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40',
+        '#E7E9ED', '#74B49B', '#FF5733', '#C70039', '#900C3F', '#581845'
+      ];
 
       function init() {
         function collectBenchesPerTestCase(entries) {
@@ -186,9 +190,9 @@ exports.DEFAULT_INDEX_HTML = String.raw`<!DOCTYPE html>
             const { commit, date, tool, benches } = entry;
             for (const bench of benches) {
               const result = { commit, date, tool, bench };
-              const arr = map.get(bench.name);
+              const arr = map.get(bench.name+"-&&-"+bench.plot_group);
               if (arr === undefined) {
-                map.set(bench.name, [result]);
+                map.set(bench.name+"-&&-"+bench.plot_group, [result]);
               } else {
                 arr.push(result);
               }
@@ -232,7 +236,7 @@ exports.DEFAULT_INDEX_HTML = String.raw`<!DOCTYPE html>
               if (!groups.has(group)) {
                 groups.set(group, []);
               }
-              groups.get(group).push({ name: benchName, benches });
+              groups.get(group).push({ name: benchName, benches, plot_group: bench.bench.plot_group});
             }
           }
         }
@@ -264,99 +268,125 @@ exports.DEFAULT_INDEX_HTML = String.raw`<!DOCTYPE html>
             tabContent.classList.add('active');
           }
 
-          // Create a Set to keep track of rendered names
+          // Create a Set to keep track of rendered plot groups
+          const renderedGroups = new Map();
           const renderedNames = new Set();
 
-          // Iterate over groupData array
-          groupData.forEach(({ name, benches }) => {
-            // Check if the name has already been rendered
-            if (!renderedNames.has(name)) {
-              // Render the graph for this name
-              renderGraph(tabContent, name, benches);
+          groupData.forEach(({ name, benches, plot_group }) => {
+            // Extract the name from the unique name
+            const regex = /^(.*?)-&&-/;
+            name = name.match(regex)[1];
 
-              // Add the name to the set of rendered names
+            if ((!renderedGroups.has(plot_group) || (!renderedNames.has(name)) && plot_group === "none") ) {
+              // Render the graph for this plot group
+              const chartInstance = renderGraph(tabContent, name, benches, plot_group);
+              renderedGroups.set(plot_group, chartInstance);
+              if (!(plot_group === "none")){
+                renderedNames.add(name);
+              }
+              
+            } else if (!(plot_group === "none")) {
+              // Update the existing chart for this plot group
+              const chartInstance = renderedGroups.get(plot_group);
+              renderGraph(tabContent, name, benches, plot_group, chartInstance);
               renderedNames.add(name);
             }
           });
         });
       }
 
-      function renderGraph(parent, name, dataset) {
-        const canvas = document.createElement('canvas');
-        canvas.className = 'benchmark-chart';
-        parent.appendChild(canvas);
+      function renderGraph(parent, name, dataset, plotGroup, chartInstance = null) {
+        const colorIndex = chartInstance ? chartInstance.data.datasets.length : 0;
+        let color = predefinedPlotColors[colorIndex % predefinedPlotColors.length];
 
-        const color = toolColors[dataset.length > 0 ? dataset[0].tool : '_'];
-        const data = {
-          labels: dataset.map(d => d.commit.id.slice(0, 7)),
-          datasets: [
-            {
-              label: name,
-              data: dataset.map(d => d.bench.value),
-              borderColor: color,
-              backgroundColor: color + '60',
-            }
-          ],
-        };
-        const options = {
-          scales: {
-            xAxes: [
-              {
-                scaleLabel: {
-                  display: true,
-                  labelString: 'commit',
-                },
-              }
-            ],
-            yAxes: [
-              {
-                scaleLabel: {
-                  display: true,
-                  labelString: dataset.length > 0 ? dataset[0].bench.unit : '',
-                },
-                ticks: {
-                  beginAtZero: true,
-                }
-              }
-            ],
-          },
-          tooltips: {
-            callbacks: {
-              afterTitle: items => {
-                const { index } = items[0];
-                const data = dataset[index];
-                return '\n' + data.commit.message + '\n\n' + data.commit.timestamp + ' committed by @' + data.commit.committer.username + '\n';
-              },
-              label: item => {
-                let label = item.value;
-                const { range, unit } = dataset[item.index].bench;
-                label += ' ' + unit;
-                if (range) {
-                  label += ' (' + range + ')';
-                }
-                return label;
-              },
-              afterLabel: item => {
-                const { extra } = dataset[item.index].bench;
-                return extra ? '\n' + extra : '';
-              }
-            }
-          },
-          onClick: (_mouseEvent, activeElems) => {
-            if (activeElems.length === 0) {
-              return;
-            }
-            const index = activeElems[0]._index;
-            const url = dataset[index].commit.url;
-            window.open(url, '_blank');
-          },
+        const newDataset = {
+          label: name,
+          data: dataset.map(d => d.bench.value),
+          borderColor: color,
+          backgroundColor: color + '60',
         };
 
-        new Chart(canvas, {
-          type: 'line',
-          data,
-          options,
-        });
+        if (chartInstance) {
+          // Update existing chart
+          chartInstance.data.datasets.push(newDataset);
+          chartInstance.update();
+          return chartInstance;
+        } else {
+          // Create new chart
+          const canvas = document.createElement('canvas');
+          canvas.className = 'benchmark-chart';
+          parent.appendChild(canvas);
+
+          const data = {
+            labels: dataset.map(d => d.commit.id.slice(0, 7)),
+            datasets: [newDataset],
+          };
+          const options = {
+            scales: {
+              xAxes: [
+                {
+                  scaleLabel: {
+                    display: true,
+                    labelString: 'commit',
+                  },
+                }
+              ],
+              yAxes: [
+                {
+                  scaleLabel: {
+                    display: true,
+                    labelString: dataset.length > 0 ? dataset[0].bench.unit : '',
+                  },
+                  ticks: {
+                    beginAtZero: true,
+                  }
+                }
+              ],
+            },
+            tooltips: {
+              callbacks: {
+                afterTitle: items => {
+                  const { index } = items[0];
+                  const data = dataset[index];
+                  return '\n' + data.commit.message + '\n\n' + data.commit.timestamp + ' committed by @' + data.commit.committer.username + '\n';
+                },
+                label: item => {
+                  let label = item.value;
+                  const { range, unit } = dataset[item.index].bench;
+                  label += ' ' + unit;
+                  if (range) {
+                    label += ' (' + range + ')';
+                  }
+                  return label;
+                },
+                afterLabel: item => {
+                  const { extra } = dataset[item.index].bench;
+                  return extra ? '\n' + extra : '';
+                }
+              }
+            },
+            onClick: (_mouseEvent, activeElems) => {
+              if (activeElems.length === 0) {
+                return;
+              }
+              const index = activeElems[0]._index;
+              const url = dataset[index].commit.url;
+              window.open(url, '_blank');
+            },
+            title: {
+              display: plotGroup !== "none",
+              text: plotGroup
+            },
+          };
+
+          const newChartInstance = new Chart(canvas, {
+            type: 'line',
+            data,
+            options,
+          });
+
+          return newChartInstance;
+        }
       }
 
       renderAllCharts(init());
