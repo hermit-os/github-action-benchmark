@@ -190,9 +190,9 @@ exports.DEFAULT_INDEX_HTML = String.raw`<!DOCTYPE html>
             const { commit, date, tool, benches } = entry;
             for (const bench of benches) {
               const result = { commit, date, tool, bench };
-              const arr = map.get(bench.name+"-&&-"+bench.plot_group);
+              const arr = map.get(bench.name + "-&&-" + bench.plot_group);
               if (arr === undefined) {
-                map.set(bench.name+"-&&-"+bench.plot_group, [result]);
+                map.set(bench.name + "-&&-" + bench.plot_group, [result]);
               } else {
                 arr.push(result);
               }
@@ -236,7 +236,7 @@ exports.DEFAULT_INDEX_HTML = String.raw`<!DOCTYPE html>
               if (!groups.has(group)) {
                 groups.set(group, []);
               }
-              groups.get(group).push({ name: benchName, benches, plot_group: bench.bench.plot_group});
+              groups.get(group).push({ name: benchName, benches, plot_group: bench.bench.plot_group });
             }
           }
         }
@@ -273,19 +273,25 @@ exports.DEFAULT_INDEX_HTML = String.raw`<!DOCTYPE html>
           const renderedNames = new Set();
 
           groupData.forEach(({ name, benches, plot_group }) => {
-            // Extract the name from the unique name
-            const regex = /^(.*?)-&&-/;
-            name = name.match(regex)[1];
 
-            if ((!renderedGroups.has(plot_group) || (!renderedNames.has(name)) && plot_group === "none") ) {
+            if ((!renderedGroups.has(plot_group) || (!renderedNames.has(name)) && plot_group === "none")) {
+              renderedNames.add(name);
+
+              // Extract the name from the unique name
+              const regex = /^(.*?)-&&-/;
+              name = name.match(regex)[1];
+
               // Render the graph for this plot group
               const chartInstance = renderGraph(tabContent, name, benches, plot_group);
               renderedGroups.set(plot_group, chartInstance);
-              if (!(plot_group === "none")){
-                renderedNames.add(name);
-              }
-              
-            } else if (!(plot_group === "none")) {
+
+            } else if (!(plot_group === "none") && !renderedNames.has(name)) {
+              renderedNames.add(name);
+
+              // Extract the name from the unique name
+              const regex = /^(.*?)-&&-/;
+              name = name.match(regex)[1];
+
               // Update the existing chart for this plot group
               const chartInstance = renderedGroups.get(plot_group);
               renderGraph(tabContent, name, benches, plot_group, chartInstance);
@@ -301,14 +307,45 @@ exports.DEFAULT_INDEX_HTML = String.raw`<!DOCTYPE html>
 
         const newDataset = {
           label: name,
-          data: dataset.map(d => d.bench.value),
+          data: dataset.map(d => ({
+            x: d.commit.id.slice(0, 7),
+            y: d.bench.value,
+            commit: d.commit,
+            bench: d.bench
+          })),
           borderColor: color,
           backgroundColor: color + '60',
+        };
+
+        const updateTooltips = (chartInstance) => {
+          chartInstance.options.tooltips.callbacks = {
+            afterTitle: items => {
+              const { index, datasetIndex } = items[0];
+              const data = chartInstance.data.datasets[datasetIndex].data[index];
+              return '\n' + data.commit.message + '\n\n' + data.commit.timestamp + ' committed by @' + data.commit.committer.username + '\n';
+            },
+            label: item => {
+              let label = item.yLabel;
+              const data = chartInstance.data.datasets[item.datasetIndex].data[item.index];
+              const { range, unit } = data.bench;
+              label += ' ' + unit;
+              if (range) {
+                label += ' (' + range + ')';
+              }
+              return label;
+            },
+            afterLabel: item => {
+              const data = chartInstance.data.datasets[item.datasetIndex].data[item.index];
+              const { extra } = data.bench;
+              return extra ? '\n' + extra : '';
+            }
+          };
         };
 
         if (chartInstance) {
           // Update existing chart
           chartInstance.data.datasets.push(newDataset);
+          updateTooltips(chartInstance);
           chartInstance.update();
           return chartInstance;
         } else {
@@ -318,41 +355,39 @@ exports.DEFAULT_INDEX_HTML = String.raw`<!DOCTYPE html>
           parent.appendChild(canvas);
 
           const data = {
-            labels: dataset.map(d => d.commit.id.slice(0, 7)),
             datasets: [newDataset],
           };
           const options = {
             scales: {
-              xAxes: [
-                {
-                  scaleLabel: {
-                    display: true,
-                    labelString: 'commit',
-                  },
+              xAxes: [{
+                type: 'category',
+                labels: dataset.map(d => d.commit.id.slice(0, 7)),
+                scaleLabel: {
+                  display: true,
+                  labelString: 'commit',
+                },
+              }],
+              yAxes: [{
+                scaleLabel: {
+                  display: true,
+                  labelString: dataset.length > 0 ? dataset[0].bench.unit : '',
+                },
+                ticks: {
+                  beginAtZero: true,
                 }
-              ],
-              yAxes: [
-                {
-                  scaleLabel: {
-                    display: true,
-                    labelString: dataset.length > 0 ? dataset[0].bench.unit : '',
-                  },
-                  ticks: {
-                    beginAtZero: true,
-                  }
-                }
-              ],
+              }],
             },
             tooltips: {
               callbacks: {
                 afterTitle: items => {
-                  const { index } = items[0];
-                  const data = dataset[index];
+                  const { index, datasetIndex } = items[0];
+                  const data = data.datasets[datasetIndex].data[index];
                   return '\n' + data.commit.message + '\n\n' + data.commit.timestamp + ' committed by @' + data.commit.committer.username + '\n';
                 },
                 label: item => {
-                  let label = item.value;
-                  const { range, unit } = dataset[item.index].bench;
+                  let label = item.yLabel;
+                  const data = item.datasets[item.datasetIndex].data[item.index];
+                  const { range, unit } = data.bench;
                   label += ' ' + unit;
                   if (range) {
                     label += ' (' + range + ')';
@@ -360,7 +395,8 @@ exports.DEFAULT_INDEX_HTML = String.raw`<!DOCTYPE html>
                   return label;
                 },
                 afterLabel: item => {
-                  const { extra } = dataset[item.index].bench;
+                  const data = item.datasets[item.datasetIndex].data[item.index];
+                  const { extra } = data.bench;
                   return extra ? '\n' + extra : '';
                 }
               }
@@ -370,7 +406,8 @@ exports.DEFAULT_INDEX_HTML = String.raw`<!DOCTYPE html>
                 return;
               }
               const index = activeElems[0]._index;
-              const url = dataset[index].commit.url;
+              const datasetIndex = activeElems[0]._datasetIndex;
+              const url = chartInstance.data.datasets[datasetIndex].data[index].commit.url;
               window.open(url, '_blank');
             },
             title: {
@@ -385,9 +422,13 @@ exports.DEFAULT_INDEX_HTML = String.raw`<!DOCTYPE html>
             options,
           });
 
+          updateTooltips(newChartInstance);
+          newChartInstance.update();
+
           return newChartInstance;
         }
       }
+
 
       renderAllCharts(init());
     })();
