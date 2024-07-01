@@ -405,14 +405,10 @@ exports.DEFAULT_INDEX_HTML = String.raw`<!DOCTYPE html>
               if (activeElems.length === 0) {
                 return;
               }
+
               const index = activeElems[0]._index;
-              const datasetIndex = activeElems[0]._datasetIndex;
-              const url = chartInstance.data.datasets[datasetIndex].data[index].commit.url;
+              const url = dataset[index].commit.url;
               window.open(url, '_blank');
-            },
-            title: {
-              display: plotGroup !== "none",
-              text: plotGroup
             },
           };
 
