@@ -56,37 +56,82 @@ function getCommitFromPullRequestPayload(pr) {
 }
 async function getCommitFromGitHubAPIRequest(githubToken, ref) {
     var _a, _b, _c, _d, _e, _f, _g;
+
     const octocat = github.getOctokit(githubToken);
+
     const { status, data } = await octocat.rest.repos.getCommit({
         owner: github.context.repo.owner,
         repo: github.context.repo.repo,
         ref: ref !== null && ref !== void 0 ? ref : github.context.ref,
     });
+
     if (!(status === 200 || status === 304)) {
         throw new Error(`Could not fetch the head commit. Received code: ${status}`);
     }
-    const { commit } = data;
+
+    if (!data || !data.commit || !data.commit.tree) {
+        throw new Error("Main commit data or tree is not defined.");
+    }
+
+    const { data: treeData } = await octocat.rest.git.getTree({
+        owner: github.context.repo.owner,
+        repo: github.context.repo.repo,
+        tree_sha: data.commit.tree.sha,
+        recursive: true,
+    });
+
+    // Find the submodule file entry
+    const submoduleData = treeData.tree.find(entry => entry.path === "kernel" && entry.type === 'commit');
+    if (!submoduleData) {
+        throw new Error(`Submodule kernel not found in the commit.`);
+    }
+
+    const submoduleCommitSha = submoduleData.sha;
+    console.log(`Submodule commit SHA: ${submoduleCommitSha}`);
+
+    const submoduleOwner = 'hermit-os'; // Replace with the actual owner of the submodule repository
+    const submoduleRepo = 'kernel';   // Replace with the actual name of the submodule repository
+
+    const { status: status_sub, data: submoduleCommitData } = await octocat.rest.repos.getCommit({
+        owner: submoduleOwner,
+        repo: submoduleRepo,
+        ref: submoduleCommitSha,
+    });
+
+    if (!(status_sub === 200 || status_sub === 304)) {
+        throw new Error(`Could not fetch the commit from submodule. Received code: ${status_sub}`);
+    }
+
+    const { commit } = submoduleCommitData;
     return {
         author: {
             name: (_a = commit.author) === null || _a === void 0 ? void 0 : _a.name,
-            username: (_b = data.author) === null || _b === void 0 ? void 0 : _b.login,
+            username: (_b = submoduleCommitData.author) === null || _b === void 0 ? void 0 : _b.login,
             email: (_c = commit.author) === null || _c === void 0 ? void 0 : _c.email,
         },
         committer: {
             name: (_d = commit.committer) === null || _d === void 0 ? void 0 : _d.name,
-            username: (_e = data.committer) === null || _e === void 0 ? void 0 : _e.login,
+            username: (_e = submoduleCommitData.committer) === null || _e === void 0 ? void 0 : _e.login,
             email: (_f = commit.committer) === null || _f === void 0 ? void 0 : _f.email,
         },
-        id: data.sha,
+        id: submoduleCommitData.sha,
         message: commit.message,
         timestamp: (_g = commit.author) === null || _g === void 0 ? void 0 : _g.date,
-        url: data.html_url,
+        url: submoduleCommitData.html_url,
     };
 }
 async function getCommit(githubToken, ref) {
-    if (github.context.payload.head_commit) {
-        return github.context.payload.head_commit;
+
+    const payload = github.context.payload;
+
+    // Check if submodule commit information is present in the head commit of the payload
+    if (payload.head_commit && payload.head_commit.submodules) {
+        const kernelSubmodule = payload.head_commit.submodules.find(submodule => submodule.path === "kernel");
+        if (kernelSubmodule) {
+            return kernelSubmodule.commit;
+        }
     }
+
     const pr = github.context.payload.pull_request;
     if (pr) {
         return getCommitFromPullRequestPayload(pr);
