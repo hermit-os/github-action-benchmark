@@ -410,6 +410,10 @@ exports.DEFAULT_INDEX_HTML = String.raw`<!DOCTYPE html>
               const url = dataset[index].commit.url;
               window.open(url, '_blank');
             },
+            title: {
+               display: plotGroup !== "none",
+               text: plotGroup
+            },
           };
 
           const newChartInstance = new Chart(canvas, {
