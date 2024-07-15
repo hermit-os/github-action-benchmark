@@ -81,9 +81,9 @@ async function getCommitFromGitHubAPIRequest(githubToken, ref) {
     });
 
     // Find the submodule file entry
-    const submoduleData = treeData.tree.find(entry => entry.path === "kernel" && entry.type === 'commit');
+    const submoduleData = treeData.tree.find(entry => entry.path === "librs" && entry.type === 'commit');
     if (!submoduleData) {
-        throw new Error(`Submodule kernel not found in the commit.`);
+        throw new Error(`Submodule librs not found in the commit.`);
     }
 
     const submoduleCommitSha = submoduleData.sha;
@@ -103,6 +103,7 @@ async function getCommitFromGitHubAPIRequest(githubToken, ref) {
     }
 
     const { commit } = submoduleCommitData;
+    console.log(`Submodule commit data acquired.`);
     return {
         author: {
             name: (_a = commit.author) === null || _a === void 0 ? void 0 : _a.name,
@@ -126,7 +127,7 @@ async function getCommit(githubToken, ref) {
 
     // Check if submodule commit information is present in the head commit of the payload
     if (payload.head_commit && payload.head_commit.submodules) {
-        const kernelSubmodule = payload.head_commit.submodules.find(submodule => submodule.path === "kernel");
+        const kernelSubmodule = payload.head_commit.submodules.find(submodule => submodule.path === "librs");
         if (kernelSubmodule) {
             return kernelSubmodule.commit;
         }
@@ -506,6 +507,9 @@ async function extractResult(config) {
         throw new Error(`No benchmark result was found in ${config.outputFilePath}. Benchmark output was '${output}'`);
     }
     const commit = await getCommit(githubToken, ref);
+
+    console.log(`Results extracted.`);
+
     return {
         commit,
         date: Date.now(),

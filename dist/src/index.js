@@ -25,9 +25,9 @@ const extract_1 = require("./extract");
 const write_1 = require("./write");
 async function main() {
     const config = await (0, config_1.configFromJobInput)();
-    core.debug(`Config extracted from job: ${config}`);
+    console.log(`Config extracted from job: ${config}`);
     const bench = await (0, extract_1.extractResult)(config);
-    core.debug(`Benchmark result was extracted: ${bench}`);
+    console.log(`Benchmark result was extracted: ${bench}`);
     await (0, write_1.writeBenchmark)(bench, config);
     console.log('github-action-benchmark was run successfully!', '\nData:', bench);
 }
