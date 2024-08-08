@@ -440,6 +440,17 @@ function extractCustomBenchmarkResult(output) {
         throw new Error(`Output file for 'custom-(bigger|smaller)-is-better' must be JSON file containing an array of entries in BenchmarkResult format: ${err.message}`);
     }
 }
+function extractHermitBenchResult(output) {
+    try {
+        const json = JSON.parse(output);
+        return json.map(({ name, value, unit, range, extra, group, plot_group }) => {
+            return { name, value, unit, range, extra, group, plot_group};
+        });
+    }
+    catch (err) {
+        throw new Error(`Output file for 'hermit-bench' must be JSON file containing an array of entries in BenchmarkResult format: ${err.message}`);
+    }
+}
 function extractLuauBenchmarkResult(output) {
     const lines = output.split(/\n/);
     const results = [];
@@ -498,6 +509,9 @@ async function extractResult(config) {
             break;
         case 'benchmarkluau':
             benches = extractLuauBenchmarkResult(output);
+            break;
+        case 'hermit-bench':
+            benches = extractHermitBenchResult(output);
             break;
         default:
             throw new Error(`FATAL: Unexpected tool: '${tool}'`);
