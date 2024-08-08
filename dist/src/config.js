@@ -37,6 +37,7 @@ exports.VALID_TOOLS = [
     'benchmarkdotnet',
     'customBiggerIsBetter',
     'customSmallerIsBetter',
+    'hermit-bench'
 ];
 const RE_UINT = /^\d+$/;
 function validateToolType(tool) {
