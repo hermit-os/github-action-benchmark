@@ -384,16 +384,13 @@ async function writeBenchmarkToGitHubPages(bench, config) {
         if (!skipFetchGhPages) {
             await git.fetch(githubToken, ghPagesBranch);
         }
-        await git.cmd([], 'switch', ghPagesBranch);
+        await git.cmd([], 'switch', '-f' ,ghPagesBranch);
+        await git.cmd([], 'reset', '--hard', ghPagesBranch);
     }
     try {
         return await writeBenchmarkToGitHubPagesWithRetry(bench, config, 10);
-    }
-    finally {
-        if (!ghRepository) {
-            // `git switch` does not work for backing to detached head
-            await git.cmd([], 'checkout', '-');
-        }
+    } catch (err) {
+        throw err;
     }
 }
 async function loadDataJson(jsonPath) {
