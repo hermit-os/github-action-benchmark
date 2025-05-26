@@ -159,7 +159,7 @@ function buildComment(benchName, curSuite, prevSuite, expandableDetails = true) 
         '',
         expandableDetails ? '<details>' : '',
         '',
-        `| Benchmark suite | Current: ${curSuite.commit.id} | Previous: ${prevSuite.commit.id} | Ratio |`,
+        `| Benchmark | Current: ${curSuite.commit.id} | Previous: ${prevSuite.commit.id} | Performance Ratio |`,
         '|-|-|-|-|',
     ];
     for (const current of curSuite.benches) {
@@ -167,10 +167,10 @@ function buildComment(benchName, curSuite, prevSuite, expandableDetails = true) 
         const prev = prevSuite.benches.find((i) => i.name === current.name);
         if (prev) {
             const ratio = getRatio(curSuite.tool, prev, current);
-            line = `| \`${current.name}\` | ${strVal(current)} | ${strVal(prev)} | \`${floatStr(ratio)}\` |`;
+            line = `| ${current.name} | ${strVal(current)} | ${strVal(prev)} | \`${floatStr(ratio)}\` |`;
         }
         else {
-            line = `| \`${current.name}\` | ${strVal(current)} | | |`;
+            line = `| ${current.name} | ${strVal(current)} | | |`;
         }
         lines.push(line);
     }
