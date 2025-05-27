@@ -156,8 +156,6 @@ function commentFooter() {
 function buildComment(benchName, curSuite, prevSuite, config, expandableDetails = true) {
     const { benchmarkMatrixName } = config;
     const lines = [
-       // `# ${benchName}`,
-       // '',
         expandableDetails ? '<details><summary>' + benchmarkMatrixName + '</summary>' : '',
         '',
         `| Benchmark | Current: ${curSuite.commit.id} | Previous: ${prevSuite.commit.id} | Performance Ratio |`,
@@ -228,7 +226,7 @@ async function handleComment(benchName, curSuite, prevSuite, config) {
     }
     core.debug('Commenting about benchmark comparison');
     const body = buildComment(benchName, curSuite, prevSuite, config);
-    await leaveComment(curSuite.commit.id, body, `${benchName} Summary`, githubToken);
+    await leaveComment(curSuite.commit.id, body, `${curSuite.commit.id} Benchmark Summary`, githubToken);
 }
 async function handleAlert(benchName, curSuite, prevSuite, config) {
     const { alertThreshold, githubToken, commentOnAlert, failOnAlert, alertCommentCcUsers, failThreshold } = config;
@@ -292,6 +290,15 @@ function addBenchmarkToDataJson(benchName, bench, data, maxItems) {
                 break;
             }
         }
+
+        if (prevBench) {
+            for (const s of suites) {
+                if (s !== prevBench && s.commit.id === prevBench.commit.id) {
+                    prevBench.benches.push(...s.benches);
+                }
+            }
+        }
+
         suites.push(bench);
         if (maxItems !== null && suites.length > maxItems) {
             suites.splice(0, suites.length - maxItems);
