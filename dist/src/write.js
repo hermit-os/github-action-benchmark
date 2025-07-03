@@ -228,10 +228,15 @@ function buildAlertComment(alerts, benchName, curSuite, prevSuite, threshold, cc
     }
     return lines.join('\n');
 }
-async function leaveComment(commitId, body, commentId, token) {
+async function leaveComment(commitId, body, commentId, token, prNumber) {
     core.debug('Sending comment:\n' + body);
     const repoMetadata = getCurrentRepoMetadata();
-    const pr = github.context.payload.pull_request;
+    let pr = github.context.payload.pull_request;
+
+    if ((pr === null || pr === void 0) && prNumber !== 0) {
+        pr = { number: prNumber };
+    }
+    
     return await ((pr === null || pr === void 0 ? void 0 : pr.number)
         ? (0, leavePRComment_1.leavePRComment)(repoMetadata.owner.login, repoMetadata.name, pr.number, body, commentId, token)
         : (0, leaveCommitComment_1.leaveCommitComment)(repoMetadata.owner.login, repoMetadata.name, commitId, body, commentId, token));
@@ -247,7 +252,7 @@ async function handleComment(benchName, curSuite, prevSuite, config) {
     }
     core.debug('Commenting about benchmark comparison');
     const body = buildComment(benchName, curSuite, prevSuite, config);
-    await leaveComment(curSuite.commit.id, body, `${curSuite.commit.id} Benchmark Summary`, githubToken);
+    await leaveComment(curSuite.commit.id, body, `${curSuite.commit.id} Benchmark Summary`, githubToken, config.prNumber);
 }
 async function handleAlert(benchName, curSuite, prevSuite, config) {
     const { alertThreshold, githubToken, commentOnAlert, failOnAlert, alertCommentCcUsers, failThreshold } = config;
@@ -267,7 +272,7 @@ async function handleAlert(benchName, curSuite, prevSuite, config) {
         if (!githubToken) {
             throw new Error("'comment-on-alert' input is set but 'github-token' input is not set");
         }
-        const res = await leaveComment(curSuite.commit.id, body, `${benchName} Alert`, githubToken);
+        const res = await leaveComment(curSuite.commit.id, body, `${benchName} Alert`, githubToken, config.prNumber);
         const url = res.data.html_url;
         message = body + `\nComment was generated at ${url}`;
     }

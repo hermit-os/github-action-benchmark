@@ -83,6 +83,10 @@ inputs:
     description: 'Name of the benchmark matrix. This value is used to identify the benchmark matrix in the chart'
     required: false
     default: 'benchmarks'
+  pr-number:
+    description: 'Pull request number to use when finding commit. This input is used only when the action is run in a pull request workflow'
+    required: false
+    default: 0
 
 runs:
   using: 'node20'

@@ -215,6 +215,7 @@ async function configFromJobInput() {
     const alertCommentCcUsers = getCommaSeparatedInput('alert-comment-cc-users');
     let externalDataJsonPath = core.getInput('external-data-json-path');
     const benchmarkMatrixName = core.getInput('benchmark-matrix-name');
+    const prNumber = core.getInput('pr-number');
     const maxItemsInChart = getUintInput('max-items-in-chart');
     let failThreshold = getPercentageInput('fail-threshold');
     validateToolType(tool);
@@ -260,6 +261,7 @@ async function configFromJobInput() {
         alertCommentCcUsers,
         externalDataJsonPath,
         benchmarkMatrixName,
+        prNumber: prNumber ? parseInt(prNumber, 10) : 0,
         maxItemsInChart,
         failThreshold,
         ref,
