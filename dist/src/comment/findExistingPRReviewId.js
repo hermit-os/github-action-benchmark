@@ -23,7 +23,7 @@ exports.findExistingPRReviewId = void 0;
 const github = __importStar(require("@actions/github"));
 const benchmarkCommentTags_1 = require("./benchmarkCommentTags");
 const core = __importStar(require("@actions/core"));
-async function findExistingPRReviewId(repoOwner, repoName, pullRequestNumber, benchName, token) {
+async function findExistingPRReviewId(repoOwner, repoName, pullRequestNumber, benchName, token, bare) {
     core.debug('findExistingPRReviewId start');
     const client = github.getOctokit(token);
     const existingReviewsResponse = await client.rest.pulls.listReviews({
@@ -32,6 +32,11 @@ async function findExistingPRReviewId(repoOwner, repoName, pullRequestNumber, be
         // eslint-disable-next-line @typescript-eslint/naming-convention
         pull_number: pullRequestNumber,
     });
+    if (bare == true) {
+        const existingReview = existingReviewsResponse.data.find((review) => review.body.startsWith((0, benchmarkCommentTags_1.benchmarkStartTagBare)()));
+        core.debug('findExistingPRReviewId start');
+        return existingReview === null || existingReview === void 0 ? void 0 : existingReview.id;
+    }
     const existingReview = existingReviewsResponse.data.find((review) => review.body.startsWith((0, benchmarkCommentTags_1.benchmarkStartTag)(benchName)));
     core.debug('findExistingPRReviewId start');
     return existingReview === null || existingReview === void 0 ? void 0 : existingReview.id;

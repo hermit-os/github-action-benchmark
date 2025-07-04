@@ -6,6 +6,10 @@ function benchmarkStartTag(commentId) {
     return `<!-- ${BENCHMARK_COMMENT_TAG}(start): ${commentId} -->`;
 }
 exports.benchmarkStartTag = benchmarkStartTag;
+function benchmarkStartTagBare() {
+    return `<!-- ${BENCHMARK_COMMENT_TAG}(start):`;
+}
+exports.benchmarkStartTagBare = benchmarkStartTagBare;
 function benchmarkEndTag(commentId) {
     return `<!-- ${BENCHMARK_COMMENT_TAG}(end): ${commentId} -->`;
 }
