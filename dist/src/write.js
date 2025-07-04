@@ -168,16 +168,24 @@ function buildComment(benchName, curSuite, prevSuite, config, expandableDetails 
     ];
     for (const current of curSuite.benches) {
         let line;
-        const prev = prevSuite.benches.find((i) => i.name === current.name);
+        const prev = prevSuite.benches.find((i) => i.name === current.name && i.plot_group === current.plot_group && i.group === current.group);
         console.log(`Comparing current:${current.name} with previous:${prev === null || prev === void 0 ? void 0 : prev.name}`);
+
+        let name = current.name;
+        if (current.plot_group !== "none") {
+            name = `${current.plot_group} - ${name}`;
+        } else if (current.group !== "Build" && current.group !== "File Size") {
+            name = `${current.group} - ${name}`;
+        }
+
         if (prev) {
             const ratio = getRatio(curSuite.tool, prev, current);
-            line = `| ${current.name} | ${strVal(current)} | ${strVal(prev)} | \`${floatStr(ratio)}\` |`;
+            line = `| ${name} | ${strVal(current)} | ${strVal(prev)} | \`${floatStr(ratio)}\` |`;
         }
         else {
             // print all benchmarks from previous suite
             console.log('Failed to find benchmark in list: All previous benchmarks:', prevSuite.benches.map((b) => b.name));
-            line = `| ${current.name} | ${strVal(current)} | | |`;
+            line = `| ${name} | ${strVal(current)} | | |`;
         }
         lines.push(line);
     }
