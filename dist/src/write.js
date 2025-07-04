@@ -149,7 +149,7 @@ function strVal(b) {
 function strValShortened(b) {
     let s = `\`${b.value.toFixed(2)}\` ${b.unit}`;
     if (b.range) {
-        s += ` (\`${b.range.toFixed(2)}\`)`;
+        s += ` (\`±${b.range.toFixed(2)}\` ${b.unit})`;
     }
     return s;
 }
@@ -192,7 +192,7 @@ function buildComment(benchName, curSuite, prevSuite, config, expandableDetails 
         else {
             // print all benchmarks from previous suite
             console.log('Failed to find benchmark in list: All previous benchmarks:', prevSuite.benches.map((b) => b.name));
-            line = `| ${name} | ${strVal(current)} | | |`;
+            line = `| ${name} | ${strValShortened(current)} | | |`;
         }
         lines.push(line);
     }
