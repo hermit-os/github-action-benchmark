@@ -146,6 +146,13 @@ function strVal(b) {
     }
     return s;
 }
+function strValShortened(b) {
+    let s = `\`${b.value.toFixed(2)}\` ${b.unit}`;
+    if (b.range) {
+        s += ` (\`${b.range.toFixed(2)}\`)`;
+    }
+    return s;
+}
 function commentFooter() {
     var _a;
     const repoMetadata = getCurrentRepoMetadata();
@@ -180,7 +187,7 @@ function buildComment(benchName, curSuite, prevSuite, config, expandableDetails 
 
         if (prev) {
             const ratio = getRatio(curSuite.tool, prev, current);
-            line = `| ${name} | ${strVal(current)} | ${strVal(prev)} | \`${floatStr(ratio)}\` |`;
+            line = `| ${name} | ${strValShortened(current)} | ${strValShortened(prev)} | \`${floatStr(ratio)}\` |`;
         }
         else {
             // print all benchmarks from previous suite
