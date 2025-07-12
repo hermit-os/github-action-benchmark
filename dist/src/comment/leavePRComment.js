@@ -25,10 +25,15 @@ const benchmarkCommentTags_1 = require("./benchmarkCommentTags");
 const findExistingPRReviewId_1 = require("./findExistingPRReviewId");
 const core = __importStar(require("@actions/core"));
 async function leavePRComment(repoOwner, repoName, pullRequestNumber, body, commentId, token) {
+    console.log('leavePRComment on ', repoOwner, '/', repoName, ', PR Number: ' , pullRequestNumber);
+
     try {
         core.debug('leavePRComment start');
         const client = github.getOctokit(token);
         let existingCommentId = await (0, findExistingPRReviewId_1.findExistingPRReviewId)(repoOwner, repoName, pullRequestNumber, commentId, token, false);
+
+        console.log('Existing comment ID:', existingCommentId);
+
         if (!existingCommentId) {
             // Check to see if the generic bare start tag exists
             existingCommentId = await (0, findExistingPRReviewId_1.findExistingPRReviewId)(repoOwner, repoName, pullRequestNumber, commentId, token, true);
