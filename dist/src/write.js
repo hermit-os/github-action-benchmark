@@ -166,9 +166,8 @@ function buildComment(benchName, curSuite, prevSuite, config, expandableDetails 
         return buildCommentNoPrev(benchName, curSuite, config, expandableDetails);
     }
 
-    const { benchmarkMatrixName } = config;
     const lines = [
-        expandableDetails ? '<details><summary>' + benchmarkMatrixName + '</summary>' : '',
+        expandableDetails ? '<details>' : '',
         '',
         `| Benchmark | Current: ${curSuite.commit.id} | Previous: ${prevSuite.commit.id} | Performance Ratio |`,
         '|-|-|-|-|',
@@ -197,13 +196,12 @@ function buildComment(benchName, curSuite, prevSuite, config, expandableDetails 
         lines.push(line);
     }
     // Footer
-    lines.push('', expandableDetails ? '</details>' : '',);
+    lines.push('', expandableDetails ? '</details>' : '', '', commentFooter());
     return lines.join('\n');
 }
 function buildCommentNoPrev(benchName, curSuite, config, expandableDetails = true) {
-    const { benchmarkMatrixName } = config;
     const lines = [
-        expandableDetails ? '<details><summary>' + benchmarkMatrixName + '</summary>' : '',
+        expandableDetails ? '<details>' : '',
         '',
         `| Benchmark | Current: ${curSuite.commit.id} | Previous: - | Performance Ratio |`,
         '|-|-|-|-|',
@@ -213,7 +211,7 @@ function buildCommentNoPrev(benchName, curSuite, config, expandableDetails = tru
         lines.push(line);
     }
     // Footer
-    lines.push('', expandableDetails ? '</details>' : '',);
+    lines.push('', expandableDetails ? '</details>' : '', '', commentFooter());
     return lines.join('\n');
 }
 exports.buildComment = buildComment;
