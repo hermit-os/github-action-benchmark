@@ -24,7 +24,7 @@ const github = __importStar(require("@actions/github"));
 const core = __importStar(require("@actions/core"));
 const benchmarkCommentTags_1 = require("./benchmarkCommentTags");
 async function leaveCommitComment(repoOwner, repoName, commitId, body, commentId, token) {
-    core.debug('leaveCommitComment start');
+    console.log('leaveCommitComment start');
     const client = github.getOctokit(token);
     const response = await client.rest.repos.createCommitComment({
         owner: repoOwner,

@@ -249,6 +249,8 @@ async function leaveComment(commitId, body, commentId, token, prNumber) {
     if ((pr === null || pr === void 0) && prNumber !== 0) {
         pr = { number: prNumber };
     }
+
+    console.log('Leaving PR comment with pr:', pr, ' prNumber:', prNumber, 'commitId:', commitId);
     
     return await ((pr === null || pr === void 0 ? void 0 : pr.number)
         ? (0, leavePRComment_1.leavePRComment)(repoMetadata.owner.login, repoMetadata.name, pr.number, body, commentId, token)
