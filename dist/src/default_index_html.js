@@ -330,7 +330,7 @@ exports.DEFAULT_INDEX_HTML = String.raw`<!DOCTYPE html>
               const { range, unit } = data.bench;
               label += ' ' + unit;
               if (range) {
-                label += ' (' + range + ')';
+                label += ' (±' + range + ' ' + unit + ')';
               }
               return label;
             },
