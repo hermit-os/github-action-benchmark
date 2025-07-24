@@ -322,7 +322,11 @@ exports.DEFAULT_INDEX_HTML = String.raw`<!DOCTYPE html>
             afterTitle: items => {
               const { index, datasetIndex } = items[0];
               const data = chartInstance.data.datasets[datasetIndex].data[index];
-              return '\n' + data.commit.message + '\n\n' + data.commit.timestamp + ' committed by @' + data.commit.committer.username + '\n';
+              let text = '\n' + data.commit.message + '\n\n' + data.commit.timestamp + ' committed by @' + data.commit.committer.username + '\n'
+              if (data.bench.runner_name) {
+                text += '\nRunner: \'' + data.bench.runner_name + '\'\n';
+              }
+              return text;
             },
             label: item => {
               let label = item.yLabel;
@@ -382,7 +386,11 @@ exports.DEFAULT_INDEX_HTML = String.raw`<!DOCTYPE html>
                 afterTitle: items => {
                   const { index, datasetIndex } = items[0];
                   const data = data.datasets[datasetIndex].data[index];
-                  return '\n' + data.commit.message + '\n\n' + data.commit.timestamp + ' committed by @' + data.commit.committer.username + '\n';
+                  let text = '\n' + data.commit.message + '\n\n' + data.commit.timestamp + ' committed by @' + data.commit.committer.username + '\n'
+                  if (data.bench.runner_name) {
+                    text += '\nRunner: \'' + data.bench.runner_name + '\'\n';
+                  }
+                  return text;
                 },
                 label: item => {
                   let label = item.yLabel;

@@ -398,8 +398,8 @@ function extractCustomBenchmarkResult(output) {
 function extractHermitBenchResult(output) {
     try {
         const json = JSON.parse(output);
-        return json.map(({ name, value, unit, range, extra, group, plot_group }) => {
-            return { name, value, unit, range, extra, group, plot_group};
+        return json.map(({ name, value, unit, range, extra, group, plot_group, runner_name }) => {
+            return { name, value, unit, range, extra, group, plot_group, runner_name };
         });
     }
     catch (err) {
